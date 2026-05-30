@@ -1,89 +1,102 @@
 const express = require("express")
 const router = express.Router()
 
-const {users, transactions} =  require ("../data")
+const User = require("../models/user")
+const Transaction = require ("../models/transaction")
 
-router.get ("/balance", (req, res) => {
+router.get ("/balance", async (req, res) => {
 
     const { email } = req.body
     if (!email) {
         return res.status(400).json({message: "Email is required"})
+    
     }
-    const user = users.find(user => user.email === email)
-    if (!user) {
-        return res.status(404).json({message: "User not found"})
+    try {
+        const user = await User.findOne({email})
+        if (!user) {
+            return res.status(400).json ({message: "Email does not exist"})
+
+        }
+        res.status(200).json({balance: user.balance})
+    } catch (err) {
+        res.status(500).json({message: "Server error"})
     }
-    res.status(200).json({balance: user.balance})
 })
 
-router.post ("/deposit", (req, res) => {
+router.post ("/deposit", async (req, res) => {
     const {email, amount} = req.body
     if (!email) {
         return res.status(400).json({message: "Email is required"})
     }
-    const user = users.find(user => user.email === email)
+try {
+    const user = await User.findOne({email})
     if (!user) {
-        return res.status(400).json({message: "Email does not exist"})
+        res.status(400).json({message: "Email does not exist"})
     }
-    
     if (amount <= 0) {
-        return res.status(400).json({message: "Amount must be greater than 0"})
+        return res.status(400).json({message: "amount must be greater than 0"})
     }
     user.balance += amount
+    await user.save()
 
-      transactions.push({
-        id: Date.now(),
+    const transaction = new Transaction({
         type: "deposit",
-        email: email,
         amount: amount,
-        date: new Date()
+        email: email
     })
-    res.status(200).json({message: "Deposit successful", balance: user.balance})
+    await transaction.save()
 
+    res.status(200).json({message: "Deposit successful", balance: user.balance})
+} catch (err) {
+    res.status(500).json({message: "Server error"})
+}
 
 })
 
-router.post("/withdraw", (req, res) => {
+router.post("/withdraw", async (req, res) => {
     const {email, amount} = req.body
     if (!email) {
         return res.status(400).json({message: "Email is required"})
     }
     if (!amount) {
         return res.status(400).json({message: "Amount is required"})
-    }
+    } 
+    try{
 
-    const user = users.find(user => user.email === email)
+    const user = await User.findOne({email}) 
     if (!user) {
         return res.status(400).json({message: "Email does not exist"})
     }
     if (amount <= 0) {
-        return res.status(400).json({message: "Amount must be greater than 0 you broke boy "})
+        return res.status(400).json({message: "Amount must be greater than 0 "})
     }
     if (user.balance < amount) {
-        return res.status(400).json({message: "Insufficient funds bro"})
+        return res.status(400).json({message: "Insufficient funds "})
     }
     user.balance -= amount
-
-    
-    transactions.push({
-        id: Date.now(),
+    await user.save()
+    await Transaction.create({
         type: "withdrawal",
         email: email,
-        amount: amount,
-        date: new Date()
+        amount: amount
     })
-    res.status(200).json({message: " Withdrawal Successfull", balance: user.balance})
 
+    res.status(200).json({message: " Withdrawal Successfull", balance: user.balance})
+    }
+    catch(err) {
+        res.status(500).json({message: "Server error"})
+    }
 })
 
-router.post("/transfer", (req, res) => {
+router.post("/transfer", async(req, res) => {
     const {senderEmail, recipientEmail, amount} = req.body
     if (!senderEmail || !recipientEmail || !amount) {
         return res.status(400).json({message: "All fields are required"})
 
     }
-const sender = users.find(user => user.email === senderEmail)
-    const recipient = users.find(user => user.email === recipientEmail)
+    try {
+    const sender = await User.findOne({email: senderEmail})
+    const recipient = await User.findOne({email: recipientEmail})
     if (!sender) {
         return res.status(400).json({ message: " Sender email does not exist"})
     }
@@ -99,33 +112,41 @@ const sender = users.find(user => user.email === senderEmail)
 
     }
     sender.balance -= amount
+    await sender.save()
     recipient.balance += amount
+    await recipient.save()
 
-    
-    transactions.push({
-        id :Date.now(),
-        type: "transfer",
+    await Transaction.create({
+        type: "Transfer",
         senderEmail: senderEmail,
         recipientEmail: recipientEmail,
-        amount: amount,
-        date: new Date()
+        amount: amount
     })
+
     res.status(200).json({message: "transfer successfull", senderBalance: sender.balance, recipientBalance: recipient.balance})
-
+    } catch (err) {
+        res.status(500).json({message: "Server error"})
+    }
     })
 
-    router.get ("/transactions", (req,res) => {
-        const { email} = req.body
+    router.get("/transactions", async (req, res) => {
+        const {email} = req.body
         if (!email) {
-            return res.status(400).json({message: "email is required"})
-
-        }
-        const userTransactions = transactions.filter(transaction =>
-             transaction.email === email ||
-            transaction.senderEmail === email||
-            transaction.recipientEmail === email)
-        res.status(200).json({transactions: userTransactions})
-
+            return res.status(400).json({message: "Email is required"})
+        } try {
+        const transactions = await Transaction.find({ $or: [
+            { email: email },
+            { senderEmail: email },
+            { recipientEmail: email }
+        ]})
+       if (transactions.length === 0) {
+        return res.status(404).json({message: "No transactions found for this email"})
+       }
+        res.status(200).json({transactions})
+    } catch (err) {
+        res.status(500).json({message: "Server error"})
+    }
     })
+
 
 module.exports = router
