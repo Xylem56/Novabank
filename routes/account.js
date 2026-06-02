@@ -8,11 +8,8 @@ const Transaction = require ("../models/transaction")
 
 router.get ("/balance", authMiddleware, async (req, res) => {
 
-    const { email } = req.body
-    if (!email) {
-        return res.status(400).json({message: "Email is required"})
+    const email = req.user.email  
     
-    }
     try {
         const user = await User.findOne({email})
         if (!user) {
@@ -26,10 +23,9 @@ router.get ("/balance", authMiddleware, async (req, res) => {
 })
 
 router.post ("/deposit", authMiddleware, async (req, res) => {
-    const {email, amount} = req.body
-    if (!email) {
-        return res.status(400).json({message: "Email is required"})
-    }
+    const email = req.user.email
+    const {amount} = req.body
+    
 try {
     const user = await User.findOne({email})
     if (!user) {
@@ -56,10 +52,9 @@ try {
 })
 
 router.post("/withdraw", authMiddleware,async (req, res) => {
-    const {email, amount} = req.body
-    if (!email) {
-        return res.status(400).json({message: "Email is required"})
-    }
+    const email = req.user.email
+    const {amount} = req.body
+    
     if (!amount) {
         return res.status(400).json({message: "Amount is required"})
     } 
@@ -91,7 +86,8 @@ router.post("/withdraw", authMiddleware,async (req, res) => {
 })
 
 router.post("/transfer", authMiddleware, async(req, res) => {
-    const {senderEmail, recipientEmail, amount} = req.body
+    const senderEmail = req.user.email
+    const {recipientEmail, amount} = req.body
     if (!senderEmail || !recipientEmail || !amount) {
         return res.status(400).json({message: "All fields are required"})
 
@@ -133,10 +129,8 @@ router.post("/transfer", authMiddleware, async(req, res) => {
     })
 
     router.get("/transactions", authMiddleware, async (req, res) => {
-        const {email} = req.body
-        if (!email) {
-            return res.status(400).json({message: "Email is required"})
-        } try {
+        const email = req.user.email
+        try {
         const transactions = await Transaction.find({ $or: [
             { email: email },
             { senderEmail: email },
