@@ -1,10 +1,12 @@
+const authMiddleware = require("../middleware/auth")
 const express = require("express")
 const router = express.Router()
 
 const User = require("../models/user")
 const Transaction = require ("../models/transaction")
 
-router.get ("/balance", async (req, res) => {
+
+router.get ("/balance", authMiddleware, async (req, res) => {
 
     const { email } = req.body
     if (!email) {
@@ -23,7 +25,7 @@ router.get ("/balance", async (req, res) => {
     }
 })
 
-router.post ("/deposit", async (req, res) => {
+router.post ("/deposit", authMiddleware, async (req, res) => {
     const {email, amount} = req.body
     if (!email) {
         return res.status(400).json({message: "Email is required"})
@@ -53,7 +55,7 @@ try {
 
 })
 
-router.post("/withdraw", async (req, res) => {
+router.post("/withdraw", authMiddleware,async (req, res) => {
     const {email, amount} = req.body
     if (!email) {
         return res.status(400).json({message: "Email is required"})
@@ -88,7 +90,7 @@ router.post("/withdraw", async (req, res) => {
     }
 })
 
-router.post("/transfer", async(req, res) => {
+router.post("/transfer", authMiddleware, async(req, res) => {
     const {senderEmail, recipientEmail, amount} = req.body
     if (!senderEmail || !recipientEmail || !amount) {
         return res.status(400).json({message: "All fields are required"})
@@ -117,7 +119,7 @@ router.post("/transfer", async(req, res) => {
     await recipient.save()
 
     await Transaction.create({
-        type: "Transfer",
+        type: "transfer",
         senderEmail: senderEmail,
         recipientEmail: recipientEmail,
         amount: amount
@@ -125,11 +127,12 @@ router.post("/transfer", async(req, res) => {
 
     res.status(200).json({message: "transfer successfull", senderBalance: sender.balance, recipientBalance: recipient.balance})
     } catch (err) {
+        console.log(err)
         res.status(500).json({message: "Server error"})
     }
     })
 
-    router.get("/transactions", async (req, res) => {
+    router.get("/transactions", authMiddleware, async (req, res) => {
         const {email} = req.body
         if (!email) {
             return res.status(400).json({message: "Email is required"})

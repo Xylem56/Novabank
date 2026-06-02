@@ -1,9 +1,11 @@
+require("dotenv").config()
 const express = require("express")
 const app = express()
 
 app.use(express.json())
 app.use("/auth", require("./auth"))
 app.use("/accounts", require("./account"))
+
 
 const mongoose = require ("mongoose")
 mongoose.connect("mongodb://localhost:27017/novabank")
