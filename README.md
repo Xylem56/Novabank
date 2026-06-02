@@ -5,6 +5,7 @@ NovaBank is a secure banking backend API built with Node.js, Express, MongoDB, J
 ## Features
 - User registration and login with hashed passwords
 - JWT authentication on all protected routes
+- Refactor routes to use JWT for user identity
 - Deposit, withdrawal, and transfer between accounts
 - Transaction history
 
