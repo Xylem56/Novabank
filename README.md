@@ -23,6 +23,31 @@ NovaBank is a secure banking backend API built with Node.js, Express, MongoDB, J
 4. Start MongoDB: `sudo mongod --dbpath /tmp/mongodb --fork --logpath /tmp/mongodb.log`
 5. Start the server: `nodemon server.js`
 
+## Docker Setup
+
+This project is also fully containerized with Docker Compose, running both frontend and backend services.
+
+### Prerequisites
+- Docker & Docker Compose installed
+
+### Running the app
+```bash
+docker compose up --build
+```
+
+This spins up:
+- **backend** – Node/Express API with JWT auth
+- **frontend** – static frontend served on its own port
+- **db** – MongoDB instance
+
+### Environment variables
+Create a `.env` file inside `backend/` with your MongoDB URI, JWT secret, and any other required config.
+
+### Stopping
+```bash
+docker compose down
+```
+
 ## API Endpoints
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
